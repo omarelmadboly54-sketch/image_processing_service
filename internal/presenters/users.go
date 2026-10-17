@@ -8,6 +8,11 @@ type CreateUserReq struct {
 	Password string `json:"password" binding:"required,min=6"`
 }
 
+type LoginReq struct{
+	Email		string		`json:"email"`
+	Password	string		`json:"password"`
+}
+
 func(c *CreateUserReq) ToUser() models.User{
 	return models.User{
 		Name: c.Name,

@@ -26,6 +26,7 @@ func NewUserController(userService service.UserService)UserController{
 
 func(ctl *userController)RegisterRoutes(g *gin.RouterGroup){
 	g.POST("/users",ctl.CreateUser)
+	g.POST("/login",ctl.Login)
 }
 
 
@@ -53,4 +54,29 @@ func(ctl *userController)CreateUser(g *gin.Context){
 	}
 
 	g.JSON(http.StatusCreated,gin.H{"ok":"ok"})
+}
+
+func(ctl *userController)Login(g *gin.Context){
+	req:=presenters.LoginReq{}
+
+	if err:=g.ShouldBindJSON(&req);err!=nil{
+		g.JSON(http.StatusBadRequest,gin.H{"error":err.Error(),
+	})
+	return
+	}
+	
+	accessToken,err:=ctl.userService.Login(req.Email,req.Password)
+	if err!=nil{
+		if errors.Is(err,apperrors.ErrInvalidCredentials){
+			g.JSON(http.StatusUnauthorized,gin.H{"error":apperrors.ErrInvalidCredentials.Error(),
+		})
+		return
+		}
+		g.JSON(http.StatusInternalServerError,gin.H{"error":err.Error(),
+	})
+	return
+	}
+	g.JSON(http.StatusOK,gin.H{
+		"access_token":accessToken,
+	})
 }
