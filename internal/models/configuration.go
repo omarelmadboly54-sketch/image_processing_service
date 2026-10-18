@@ -8,5 +8,6 @@ type Config struct {
 	ServerAddress		string		`mapstructure:"SERVER_ADDRESS"`
 	SecretKey			string		`mapstructure:"SECRET_KEY"`
 	AccessTokenMinutes	int			`mapstructure:"ACCESS_TOKEN_MINUTES"`
+	CloudinaryUrl		string		`mapstructure:"CLOUDINARY_URL"`
 }
 
