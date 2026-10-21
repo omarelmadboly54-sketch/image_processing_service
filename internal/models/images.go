@@ -3,7 +3,7 @@ package models
 import "time"
 
 type Image struct {
-	ID           int64  	`gorm:"primarykey" json:"-"`
+	ID           int64  	`gorm:"primarykey;autoIncrement" json:"id"`
 	FileUrl      string 	`gorm:"not null" json:"file_url"`
 	OriginalName string 	`gorm:"not null" json:"original_name"`
 	FileSize     int64    	`gorm:"not null" json:"file_size"`
@@ -13,4 +13,5 @@ type Image struct {
 	UserID       int64  	`gorm:"not null;column:user_id" json:"-"`
 	CreatedAt    time.Time	`gorm:"autoCreateTime" json:"-"`
 	UpdatedAt	 time.Time	`gorm:"autoUpdateTime" json:"-"`
+	CloudinaryID string		`gorm:"not null" json:"cloudinary_id"`	
 }

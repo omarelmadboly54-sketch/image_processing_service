@@ -1,0 +1,2 @@
+import { ArrowLeft, WandSparkles } from "lucide-react";
+export default function WorkspacePage({onNavigate}) {return <main className="coming-soon-page"><div className="coming-soon-icon"><WandSparkles size={40}/></div><span className="workspace-eyebrow">THE NEXT CHAPTER</span><h1>Something creative<br/><span>is coming soon.</span></h1><p>Your Omarix editing workspace is under construction. Soon you'll be able to bring new ideas to your images.</p><button className="hero-primary" onClick={()=>onNavigate("home")}><ArrowLeft size={17}/> Back to home</button></main>}

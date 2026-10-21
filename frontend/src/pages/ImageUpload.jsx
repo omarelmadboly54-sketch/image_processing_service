@@ -7,7 +7,7 @@ const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || "http://localhost:808
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
 const ALLOWED_EXTENSIONS = /\.(jpe?g|png|webq)$/i;
 
-export default function ImageUpload({ onLogout }) {
+export default function ImageUpload({ onLogout, onNavigate, activePage = "upload" }) {
   const inputRef = useRef(null);
   const [file, setFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState("");
@@ -74,6 +74,9 @@ export default function ImageUpload({ onLogout }) {
       }
       if (!response.ok) throw new Error(data.error || data.message || `Upload failed (${response.status})`);
       setUploadedImage(data.data || null);
+      setFile(null);
+      setPreviewUrl("");
+      if (inputRef.current) inputRef.current.value = "";
       setNotice({ type: "success", text: data.message || "Image uploaded successfully." });
     } catch (error) {
       setNotice({ type: "error", text: error instanceof TypeError ? `Could not connect to ${API_BASE_URL}. Check that your Go backend is running.` : error.message });
@@ -84,9 +87,11 @@ export default function ImageUpload({ onLogout }) {
 
   return (
     <div className="workspace-page" id="top">
-      <Navbar onLogout={onLogout} />
       <main className="workspace-main">
         <div className="workspace-heading"><span className="workspace-eyebrow"><ImageIcon size={14} /> OMARIX WORKSPACE</span><h1>Bring your images <span>to life.</span></h1><p>Upload an image to securely store it in your Omarix library.</p></div>
+
+        {notice.text && <div className={`notice ${notice.type} upload-feedback`} role="status">{notice.text}</div>}
+        {uploadedImage && <section className="upload-success-card"><img src={uploadedImage.file_url} alt={uploadedImage.original_name || "Recently uploaded"}/><div><span className="workspace-eyebrow"><CheckCircle2 size={14}/> UPLOAD COMPLETE</span><h3>{uploadedImage.original_name || "Your image is ready"}</h3><p>Your image has been added to your gallery.</p><button type="button" className="library-primary-button" onClick={() => onNavigate("library")}>View gallery →</button></div></section>}
 
         <section className="upload-panel">
           <div className="panel-title"><div className="panel-title-icon"><UploadCloud size={21} /></div><div><h2>Upload an image</h2><p>Select a file from your device to get started.</p></div></div>
@@ -101,12 +106,11 @@ export default function ImageUpload({ onLogout }) {
               <input ref={inputRef} className="visually-hidden" type="file" accept=".jpg,.jpeg,.png,.webq,image/jpeg,image/png" onChange={(event) => chooseFile(event.target.files?.[0])} />
             </div>
             <div className="upload-actions"><span className="upload-size-note">{file ? `${formatBytes(file.size)} selected` : "Your image will be uploaded securely."}</span><button className="upload-button" type="submit" disabled={busy || !file}>{busy ? <><LoaderCircle className="spin" size={17} /> Uploading...</> : <><ArrowUpFromLine size={17} /> Upload image</>}</button></div>
-            {notice.text && <div className={`notice ${notice.type}`} role="status">{notice.text}</div>}
+
           </form>
         </section>
 
-        {uploadedImage && <section className="uploaded-result"><div className="result-heading"><span className="result-success-icon"><CheckCircle2 size={19} /></span><div><h2>Your image is uploaded</h2><p>Cloudinary has stored your image successfully.</p></div></div><div className="result-content"><a className="uploaded-image-link" href={uploadedImage.file_url} target="_blank" rel="noreferrer"><img src={uploadedImage.file_url} alt={uploadedImage.original_name || "Uploaded image"} /></a><div className="image-metadata"><div><span>File name</span><strong>{uploadedImage.original_name || file?.name || "—"}</strong></div><div><span>Format</span><strong>{uploadedImage.format || "—"}</strong></div><div><span>File size</span><strong>{typeof uploadedImage.file_size === "number" ? formatBytes(uploadedImage.file_size) : "—"}</strong></div><div><span>Dimensions</span><strong>{uploadedImage.width && uploadedImage.height ? `${uploadedImage.width} × ${uploadedImage.height} px` : "—"}</strong></div><a className="image-url-link" href={uploadedImage.file_url} target="_blank" rel="noreferrer">Open original image ↗</a></div></div></section>}
-        <p className="workspace-footnote"><span className="privacy-dot" /> Your upload is sent to your Go API and stored using Cloudinary.</p>
+
       </main>
     </div>
   );

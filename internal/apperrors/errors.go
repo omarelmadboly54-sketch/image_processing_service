@@ -10,4 +10,6 @@ var (
 	ErrInvalidSize=errors.New("file size exceeds the 5MB limit")
 	ErrInvalidImageType=errors.New("invalid file format. Only JPEG, PNG, and WebP are allowed")
 	ErrImageRequest=errors.New("image file is required under form key 'image'")
+	ErrImageNotFound=errors.New("Image Not Found")
+	ErrImageTransformFail=errors.New("failed to transform image")
 )

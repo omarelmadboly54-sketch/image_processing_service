@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ArrowRight, Eye, EyeOff, Image as ImageIcon, Sparkles } from "lucide-react";
+import { ArrowRight, Eye, EyeOff, Sparkles } from "lucide-react";
 
 const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || "http://localhost:8080").replace(/\/+$/, "");
 
@@ -57,26 +57,13 @@ export default function AuthPage({ mode, onLogin, onSwitchToLogin, onSwitchToSig
 
   return (
     <main className="auth-page">
-      <section className="visual-side" aria-label="Omarix introduction">
-        <a className="brand" href="#" onClick={(event) => event.preventDefault()}>
-          <span className="brand-icon"><ImageIcon size={21} strokeWidth={2.4} /></span><span>Omarix</span>
-        </a>
-        <div className="visual-copy">
-          <span className="kicker"><Sparkles size={14} /> YOUR CREATIVE SPACE</span>
-          <h1>Every image has<br />a <span>new perspective.</span></h1>
-          <p>A simple workspace for your image processing journey. Sign in and pick up where your creativity begins.</p>
-        </div>
-        <div className="artwork" aria-hidden="true">
-          <div className="art-glow" /><div className="art-orbit orbit-one" /><div className="art-orbit orbit-two" />
-          <div className="art-card card-back"><div className="abstract-shape shape-one" /><div className="abstract-shape shape-two" /></div>
-          <div className="art-card card-front"><div className="image-sun" /><div className="image-mountain mountain-one" /><div className="image-mountain mountain-two" /><div className="image-spark">✦</div></div>
-          <span className="floating-star star-one">✳</span><span className="floating-star star-two">✦</span>
-        </div>
-        <div className="visual-footer"><span>DESIGNED FOR YOUR NEXT IDEA</span><span className="footer-dots"><i /><i /><i /></span></div>
+      <section className="visual-side modern-auth-visual" aria-label="Omarix introduction">
+        <div className="auth-visual-brand"><img src="/omarix-logo.jfif" alt="Omarix logo"/><span>omarix</span></div>
+        <div className="auth-visual-content"><span className="kicker"><Sparkles size={15}/> YOUR CREATIVE STUDIO</span><h1>Your images.<br/><span>Your possibilities.</span></h1><p>A beautiful home for everything you create, upload, and explore.</p><div className="auth-visual-art"><img src="/omarix-logo.jfif" alt="Omarix image processing"/></div></div>
+        <div className="visual-footer">CREATE • ORGANIZE • EXPLORE</div>
       </section>
-
       <section className="form-side">
-        <div className="mobile-brand"><span className="brand-icon"><ImageIcon size={20} /></span><span>Omarix</span></div>
+        <div className="mobile-brand"><img src="/omarix-logo.jfif" alt="Omarix"/> <span>omarix</span></div>
         <div className="auth-card">
           <div className="form-heading">
             <span className="form-kicker">{isLogin ? "WELCOME BACK" : "GET STARTED"}</span>
@@ -96,9 +83,8 @@ export default function AuthPage({ mode, onLogin, onSwitchToLogin, onSwitchToSig
             {notice.text && <div className={`notice ${notice.type}`} role="status">{notice.text}</div>}
           </form>
           <p className="switch-prompt">{isLogin ? "Don't have an account?" : "Already have an account?"} <button type="button" onClick={isLogin ? onSwitchToSignup : onSwitchToLogin}>{isLogin ? "Sign up" : "Sign in"}</button></p>
-          <div className="privacy-note"><span className="privacy-dot" /> Your information is sent securely to your configured backend.</div>
         </div>
-        <div className="copyright">© {new Date().getFullYear()} Omarix <span>·</span> IMAGE PROCESSING SERVICE</div>
+        <div className="copyright">© {new Date().getFullYear()} Omarix <span>·</span> YOUR CREATIVE SPACE</div>
       </section>
     </main>
   );
