@@ -49,7 +49,7 @@ func(s *imageService)UploadAndProcessImage(fileHeader *multipart.FileHeader,user
 
 	//check file format
 	ext:=strings.ToLower(filepath.Ext(fileHeader.Filename))
-	if ext!=".jpg" &&ext !=".jpeg" &&ext!=".png" &&ext!=".webq"{
+	if ext!=".jpg" &&ext !=".jpeg" &&ext!=".png" &&ext!=".webp"{
 		return nil,apperrors.ErrInvalidImageType
 	}
 
