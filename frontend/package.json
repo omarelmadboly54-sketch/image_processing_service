@@ -13,7 +13,9 @@
     "vite": "latest",
     "react": "latest",
     "react-dom": "latest",
-    "lucide-react": "^0.468.0"
+    "lucide-react": "^0.468.0",
+    "firebase": "^11.10.0",
+    "react-easy-crop": "^5.5.0"
   },
   "devDependencies": {}
 }

@@ -1,5 +1,6 @@
 
 import { useCallback, useEffect, useState } from "react";
+import { downloadImage } from "../cloudinaryPreview.js";
 import {
   ArrowLeft,
   ChevronLeft,
@@ -9,6 +10,8 @@ import {
   RefreshCw,
   Search,
   Trash2,
+  WandSparkles,
+  Download,
   X,
 } from "lucide-react";
 import Navbar from "../components/Navbar.jsx";
@@ -36,11 +39,11 @@ async function readResponse(response) {
   }
 }
 
-export default function MyImages({ onLogout, onNavigate }) {
+export default function MyImages({ onLogout, onNavigate, initialImage }) {
   const [totalImages, setTotalImages] = useState(0);
   const [images, setImages] = useState([]);
   const [page, setPage] = useState(1);
-  const [selectedImage, setSelectedImage] = useState(null);
+  const [selectedImage, setSelectedImage] = useState(() => initialImage || null);
   const [loading, setLoading] = useState(true);
   const [detailLoading, setDetailLoading] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -48,6 +51,7 @@ export default function MyImages({ onLogout, onNavigate }) {
   const [successMessage, setSuccessMessage] = useState("");
   const [error, setError] = useState("");
   const [detailError, setDetailError] = useState("");
+  const [downloading, setDownloading] = useState(false);
 
   const getToken = () => sessionStorage.getItem("access_token");
 
@@ -77,7 +81,7 @@ export default function MyImages({ onLogout, onNavigate }) {
 
       const data = await readResponse(response);
 
-      if (response.status === 401 || response.status === 403) {
+      if (response.status === 401) {
         handleUnauthorized();
         return;
       }
@@ -107,6 +111,9 @@ export default function MyImages({ onLogout, onNavigate }) {
   useEffect(() => {
     fetchImages(1);
   }, [fetchImages]);
+  useEffect(() => {
+    if (initialImage?.id) { setSelectedImage(initialImage); setDetailError(""); }
+  }, [initialImage]);
 
   async function openImage(imageId) {
     if (imageId == null) {
@@ -134,7 +141,7 @@ export default function MyImages({ onLogout, onNavigate }) {
 
       const data = await readResponse(response);
 
-      if (response.status === 401 || response.status === 403) {
+      if (response.status === 401) {
         handleUnauthorized();
         return;
       }
@@ -171,7 +178,7 @@ export default function MyImages({ onLogout, onNavigate }) {
         headers: { Authorization: `Bearer ${getToken()}` },
       });
       const data = await readResponse(response);
-      if (response.status === 401 || response.status === 403) {
+      if (response.status === 401) {
         handleUnauthorized();
         return;
       }
@@ -187,15 +194,33 @@ export default function MyImages({ onLogout, onNavigate }) {
     }
   }
 
+  async function handleDownload() {
+    setDetailError('');
+    try { await downloadImage(selectedImage, setDownloading); }
+    catch (err) { setDetailError('Download failed. Please try again.'); }
+  }
+  function nextImage(direction) {
+    const index = images.findIndex(img => img.id === selectedImage?.id);
+    if (index < 0) return;
+    const next = images[index + direction];
+    if (next) openImage(next.id);
+  }
+  useEffect(() => {
+    if (!selectedImage) return;
+    const keydown = e => {
+      if (e.key === 'Escape') { setSelectedImage(null); setDetailError(''); }
+      if (e.key === 'ArrowLeft') nextImage(-1);
+      if (e.key === 'ArrowRight') nextImage(1);
+    };
+    document.addEventListener('keydown', keydown);
+    return () => document.removeEventListener('keydown', keydown);
+  }, [selectedImage, images]);
+
   async function goToPage(nextPage) {
     if (nextPage < 1 || loading) return;
 
     await fetchImages(nextPage);
-
-    // If a page has no results, go back to the previous page.
-    // This can happen when the last page contained exactly five images.
-    // We check the updated state on the next render instead of guessing
-    // the number of total images.
+    document.querySelector('.library-panel')?.scrollIntoView({behavior:'smooth',block:'start'});
   }
 
   return (
@@ -265,6 +290,11 @@ export default function MyImages({ onLogout, onNavigate }) {
             </div>
           ) : (
             <>
+              <div className="library-pagination library-pagination-top">
+                <button type="button" onClick={() => goToPage(page - 1)} disabled={page===1||loading}><ChevronLeft size={17}/> Previous</button>
+                <span>Page {page} of {Math.max(1,Math.ceil(totalImages/PAGE_SIZE))}</span>
+                <button type="button" onClick={() => goToPage(page + 1)} disabled={loading||page*PAGE_SIZE>=totalImages}>Next <ChevronRight size={17}/></button>
+              </div>
               <div className="image-library-grid">
                 {images.map((image) => (
                   <article className="library-image-card" key={image.id}>
@@ -360,10 +390,12 @@ export default function MyImages({ onLogout, onNavigate }) {
             ) : selectedImage ? (
               <div className="image-detail-layout">
                 <div className="image-detail-preview">
+                  <button className="image-detail-arrow image-detail-prev" aria-label="Previous image" disabled={images.findIndex(i=>i.id===selectedImage.id)<=0} onClick={()=>nextImage(-1)}><ChevronLeft size={24}/></button>
                   <img
                     src={selectedImage.file_url}
                     alt={selectedImage.original_name || "Selected image"}
                   />
+                  <button className="image-detail-arrow image-detail-next" aria-label="Next image" disabled={images.findIndex(i=>i.id===selectedImage.id)<0||images.findIndex(i=>i.id===selectedImage.id)>=images.length-1} onClick={()=>nextImage(1)}><ChevronRight size={24}/></button>
                 </div>
                 <div className="image-detail-metadata">
                   <div><span>File name</span><strong>{selectedImage.original_name || "—"}</strong></div>
@@ -371,17 +403,9 @@ export default function MyImages({ onLogout, onNavigate }) {
                   <div><span>File size</span><strong>{formatBytes(selectedImage.file_size)}</strong></div>
                   <div><span>Dimensions</span><strong>{selectedImage.width && selectedImage.height ? `${selectedImage.width} × ${selectedImage.height} px` : "—"}</strong></div>
                   
+                  <button type="button" className="library-workspace-button" onClick={() => onNavigate("workspace", selectedImage)}><WandSparkles size={16} /> Edit in workspace</button>
+                  <button type="button" className="library-download-button" disabled={downloading} onClick={handleDownload}><Download size={16} /> {downloading?'Downloading…':'Download image'}</button>
                   <button type="button" className="delete-image-button" disabled={deleting} onClick={deleteSelectedImage}><Trash2 size={16} /> {deleting ? "Deleting..." : "Delete image"}</button>
-                  {selectedImage.file_url && (
-                    <a
-                      className="image-url-link"
-                      href={selectedImage.file_url}
-                      target="_blank"
-                      rel="noreferrer"
-                    >
-                      Open original image ↗
-                    </a>
-                  )}
                 </div>
               </div>
             ) : null}

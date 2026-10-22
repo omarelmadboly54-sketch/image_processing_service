@@ -1,0 +1,7 @@
+ALTER Table users 
+ADD COLUMN IF NOT EXISTS google_id VARCHAR(255) UNIQUE;
+
+ALTER Table users
+ALTER COLUMN password DROP NOT NULL;
+
+

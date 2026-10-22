@@ -19,10 +19,18 @@ func main() {
 		log.Fatal("Failed to connect to DataBase",err)
 	}
 	log.Println("DataBase Connection Successfully")
+
 	tokenMaker,err:=token.NewJWTMaker(config.SecretKey)
 	if err!=nil{
 		log.Fatal("failed to generate token maker:",err)
 	}
+
+	firebaseApp,err:=configuration.InitFireBase()
+	if err!=nil{
+		log.Fatalf("failed to initialize Firebase:%v",err)
+	}
+	log.Println("Firebase Initialized Successfully")
+	
 
 	cld,err:=cloudinary.NewFromURL(config.CloudinaryUrl)
 	if err!=nil{
@@ -41,7 +49,7 @@ func main() {
 	//users
 	userRepo:=postgres.NewUserRepo(db)
 	tokenDuration:=time.Duration(config.AccessTokenMinutes)*time.Minute
-	userService:=service.NewUserService(userRepo,tokenMaker,tokenDuration)
+	userService:=service.NewUserService(userRepo,tokenMaker,tokenDuration,firebaseApp)
 	userController:=controller.NewUserController(userService)
 	userController.RegisterRoutes(r.Group("/api"))
 	//images

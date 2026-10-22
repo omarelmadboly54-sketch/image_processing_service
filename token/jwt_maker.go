@@ -1,10 +1,12 @@
 package token
 
 import (
+	"encoding/json"
+	"errors"
 	"fmt"
 	"time"
 
-	"github.com/dgrijalva/jwt-go"
+	"github.com/golang-jwt/jwt/v5"
 )
 
 const minsecretkeysize = 32
@@ -38,43 +40,54 @@ func(maker *JWTMaker)CreateToken(email string, user_id int64,duration time.Durat
 
 
 func (maker *JWTMaker) VerifyToken(tokenString string) (*Payload, error) {
-    token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-        if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-            return nil, ErrInvalidToken
-        }
-        return []byte(maker.secretKey), nil
-    })
+    claims := jwt.MapClaims{}
+
+    parsedToken, err := jwt.ParseWithClaims(
+        tokenString,
+        claims,
+        func(token *jwt.Token) (interface{}, error) {
+            return []byte(maker.secretKey), nil
+        },
+        jwt.WithValidMethods([]string{jwt.SigningMethodHS256.Alg()}),
+        jwt.WithExpirationRequired(),
+        jwt.WithIssuedAt(),
+        jwt.WithJSONNumber(),
+    )
 
     if err != nil {
+        if errors.Is(err, jwt.ErrTokenExpired) {
+            return nil, ErrExpiredToken
+        }
         return nil, ErrInvalidToken
     }
 
-    claims, ok := token.Claims.(jwt.MapClaims)
-    if !ok || !token.Valid {
+    if !parsedToken.Valid {
         return nil, ErrInvalidToken
     }
 
-    userIDFloat, ok := claims["user_id"].(float64)
+    email, ok := claims["email"].(string)
+    if !ok || email == "" {
+        return nil, ErrInvalidToken
+    }
+
+    userIDNumber, ok := claims["user_id"].(json.Number)
     if !ok {
         return nil, ErrInvalidToken
     }
-    userID := int64(userIDFloat)
 
-    email, _ := claims["email"].(string)
-
-    expFloat, ok := claims["exp"].(float64)
-    if !ok {
+    userID, err := userIDNumber.Int64()
+    if err != nil || userID <= 0 {
         return nil, ErrInvalidToken
     }
-    expiredAt := time.Unix(int64(expFloat), 0)
 
-    if time.Now().After(expiredAt) {
-        return nil, ErrExpiredToken
+    exp, err := claims.GetExpirationTime()
+    if err != nil || exp == nil {
+        return nil, ErrInvalidToken
     }
 
     return &Payload{
-        UserID: userID,
+        UserID:    userID,
         Email:     email,
-        ExpiredAt: expiredAt,
+        ExpiredAt: exp.Time,
     }, nil
 }

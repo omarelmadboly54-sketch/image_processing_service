@@ -27,6 +27,7 @@ func NewUserController(userService service.UserService)UserController{
 func(ctl *userController)RegisterRoutes(g *gin.RouterGroup){
 	g.POST("/users",ctl.CreateUser)
 	g.POST("/login",ctl.Login)
+	g.POST("/login/google",ctl.GoogleLogin)
 }
 
 
@@ -79,4 +80,58 @@ func(ctl *userController)Login(g *gin.Context){
 	g.JSON(http.StatusOK,gin.H{
 		"access_token":accessToken,
 	})
+}
+
+func (ctl *userController) GoogleLogin(g *gin.Context) {
+    var req presenters.GoogleLoginRequest
+
+    if err := g.ShouldBindJSON(&req); err != nil {
+        g.JSON(http.StatusBadRequest, gin.H{
+            "error": "Invalid Google login request",
+        })
+        return
+    }
+
+    accessToken, err := ctl.userService.LoginWithGoogle(
+        g.Request.Context(),
+        req.IdToken,
+    )
+
+    if err != nil {
+        switch {
+
+        case errors.Is(err, apperrors.ErrInvalidGoogleToken),
+            errors.Is(err, apperrors.ErrGoogleEmailNotFound),
+            errors.Is(err, apperrors.ErrGoogleEmailNotVerified),
+            errors.Is(err, apperrors.ErrGoogleAccountMismatch):
+
+            g.JSON(http.StatusUnauthorized, gin.H{
+                "error": err.Error(),
+            })
+
+        case errors.Is(err, apperrors.ErrGoogleAccountNotLinked):
+
+            g.JSON(http.StatusConflict, gin.H{
+                "error": err.Error(),
+            })
+
+        case errors.Is(err, apperrors.ErrFirebaseClientFailed):
+
+            g.JSON(http.StatusInternalServerError, gin.H{
+                "error": "Google authentication is temporarily unavailable",
+            })
+
+        default:
+
+            g.JSON(http.StatusInternalServerError, gin.H{
+                "error": "An unexpected error occurred",
+            })
+        }
+
+        return
+    }
+
+    g.JSON(http.StatusOK, gin.H{
+        "access_token": accessToken,
+    })
 }

@@ -67,7 +67,7 @@ export default function ImageUpload({ onLogout, onNavigate, activePage = "upload
       const raw = await response.text();
       let data = {};
       try { data = raw ? JSON.parse(raw) : {}; } catch { data = { message: raw }; }
-      if (response.status === 401 || response.status === 403) {
+      if (response.status === 401) {
         sessionStorage.removeItem("access_token");
         onLogout();
         throw new Error("Your session expired. Please sign in again.");

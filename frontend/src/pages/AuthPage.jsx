@@ -1,91 +1,14 @@
-import { useState } from "react";
-import { ArrowRight, Eye, EyeOff, Sparkles } from "lucide-react";
-
-const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || "http://localhost:8080").replace(/\/+$/, "");
-
-export default function AuthPage({ mode, onLogin, onSwitchToLogin, onSwitchToSignup }) {
-  const isLogin = mode === "login";
-  const [showPassword, setShowPassword] = useState(false);
-  const [busy, setBusy] = useState(false);
-  const [notice, setNotice] = useState({ type: "", text: "" });
-  const [form, setForm] = useState({ name: "", email: "", password: "" });
-
-  function update(event) {
-    setForm((previous) => ({ ...previous, [event.target.name]: event.target.value }));
-    setNotice({ type: "", text: "" });
-  }
-
-  async function handleSubmit(event) {
-    event.preventDefault();
-    setBusy(true);
-    setNotice({ type: "", text: "" });
-    const endpoint = isLogin ? "/api/login" : "/api/users";
-    const payload = isLogin
-      ? { email: form.email, password: form.password }
-      : { name: form.name, email: form.email, password: form.password };
-
-    try {
-      const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-      const raw = await response.text();
-      let data = {};
-      try { data = raw ? JSON.parse(raw) : {}; } catch { data = { message: raw }; }
-      if (!response.ok) throw new Error(data.error || data.message || `Request failed (${response.status})`);
-
-      if (isLogin) {
-        if (!data.access_token) throw new Error("Login succeeded, but the server did not return an access token.");
-        onLogin(data.access_token);
-      } else {
-        setNotice({ type: "success", text: "Account created successfully. You can now sign in." });
-        setForm((previous) => ({ ...previous, password: "" }));
-        window.setTimeout(() => onSwitchToLogin(), 900);
-      }
-    } catch (error) {
-      setNotice({
-        type: "error",
-        text: error instanceof TypeError
-          ? `Could not connect to ${API_BASE_URL}. Make sure your Go backend is running and CORS allows this frontend.`
-          : error.message,
-      });
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  return (
-    <main className="auth-page">
-      <section className="visual-side modern-auth-visual" aria-label="Omarix introduction">
-        <div className="auth-visual-brand"><img src="/omarix-logo.jfif" alt="Omarix logo"/><span>omarix</span></div>
-        <div className="auth-visual-content"><span className="kicker"><Sparkles size={15}/> YOUR CREATIVE STUDIO</span><h1>Your images.<br/><span>Your possibilities.</span></h1><p>A beautiful home for everything you create, upload, and explore.</p><div className="auth-visual-art"><img src="/omarix-logo.jfif" alt="Omarix image processing"/></div></div>
-        <div className="visual-footer">CREATE • ORGANIZE • EXPLORE</div>
-      </section>
-      <section className="form-side">
-        <div className="mobile-brand"><img src="/omarix-logo.jfif" alt="Omarix"/> <span>omarix</span></div>
-        <div className="auth-card">
-          <div className="form-heading">
-            <span className="form-kicker">{isLogin ? "WELCOME BACK" : "GET STARTED"}</span>
-            <h2>{isLogin ? "Sign in to your account" : "Create your account"}</h2>
-            <p>{isLogin ? "Enter your details below to continue." : "A few details and you're ready to go."}</p>
-          </div>
-          <div className="mode-switch" role="tablist" aria-label="Account action">
-            <button type="button" role="tab" aria-selected={isLogin} className={isLogin ? "selected" : ""} onClick={onSwitchToLogin}>Sign In</button>
-            <button type="button" role="tab" aria-selected={!isLogin} className={!isLogin ? "selected" : ""} onClick={onSwitchToSignup}>Sign Up</button>
-          </div>
-          <form onSubmit={handleSubmit}>
-            {!isLogin && <label className="input-label">Full name<input name="name" type="text" autoComplete="name" placeholder="Your name" value={form.name} onChange={update} required /></label>}
-            <label className="input-label">Email address<input name="email" type="email" autoComplete="email" placeholder="you@example.com" value={form.email} onChange={update} required /></label>
-            <label className="input-label">Password<span className="password-wrap"><input name="password" type={showPassword ? "text" : "password"} autoComplete={isLogin ? "current-password" : "new-password"} placeholder="Enter your password" value={form.password} onChange={update} required minLength={6} /><button className="eye-button" type="button" aria-label={showPassword ? "Hide password" : "Show password"} onClick={() => setShowPassword((value) => !value)}>{showPassword ? <EyeOff size={17} /> : <Eye size={17} />}</button></span></label>
-            {isLogin && <div className="form-options"><span className="secure-note"><span className="tiny-lock">●</span> Secure sign in</span><span className="password-hint">Use your registered email</span></div>}
-            <button className="submit-button" type="submit" disabled={busy}>{busy ? "Please wait..." : isLogin ? "Sign In" : "Create account"} <ArrowRight size={17} /></button>
-            {notice.text && <div className={`notice ${notice.type}`} role="status">{notice.text}</div>}
-          </form>
-          <p className="switch-prompt">{isLogin ? "Don't have an account?" : "Already have an account?"} <button type="button" onClick={isLogin ? onSwitchToSignup : onSwitchToLogin}>{isLogin ? "Sign up" : "Sign in"}</button></p>
-        </div>
-        <div className="copyright">© {new Date().getFullYear()} Omarix <span>·</span> YOUR CREATIVE SPACE</div>
-      </section>
-    </main>
-  );
+import { useMemo, useState } from 'react';
+import { ArrowRight, Eye, EyeOff, LockKeyhole, Sparkles, ShieldCheck } from 'lucide-react';
+import { getGoogleIdToken, firebaseConfigured } from '../firebase.js';
+const API = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080').replace(/\/+$/, '');
+function GoogleMark(){return <svg width="20" height="20" viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.25 5.48-4.76 7.18l7.73 6C44.42 38.03 46.98 31.86 46.98 24.55z"/><path fill="#FBBC05" d="M10.53 28.59A14.4 14.4 0 0 1 9.75 24c0-1.59.27-3.13.76-4.59l-7.98-6.19A23.9 23.9 0 0 0 0 24c0 3.87.93 7.51 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.92-2.13 15.9-5.8l-7.73-6c-2.14 1.44-4.88 2.3-8.17 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.97 6.19C6.51 42.62 14.62 48 24 48z"/></svg>}
+function strengthOf(password){let score=0;if(password.length>=8)score++;if(password.length>=10)score++;if(/[A-Z]/.test(password)&&/[a-z]/.test(password))score++;if(/\d/.test(password))score++;if(/[^A-Za-z0-9]/.test(password))score++;return score;}
+export default function AuthPage({mode,onLogin,onSwitchToLogin,onSwitchToSignup}){
+ const login=mode==='login';const [form,setForm]=useState({name:'',email:'',password:''});const [visible,setVisible]=useState(false);const [busy,setBusy]=useState(false);const [error,setError]=useState('');const [success,setSuccess]=useState('');const score=useMemo(()=>strengthOf(form.password),[form.password]);
+ const update=e=>{setForm(s=>({...s,[e.target.name]:e.target.value}));setError('')};
+ async function read(res){const raw=await res.text();let data={};try{data=raw?JSON.parse(raw):{}}catch{data={message:raw}}if(!res.ok)throw Error(data.error||data.message||`Request failed (${res.status})`);return data}
+ async function submit(e){e.preventDefault();setBusy(true);setError('');setSuccess('');try{if(!login&&form.password.length<10)throw Error('Choose a password with at least 10 characters.');const data=await read(await fetch(`${API}${login?'/api/login':'/api/users'}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(login?{email:form.email,password:form.password}:form)}));if(login){if(!data.access_token)throw Error('Missing access token from server.');onLogin(data.access_token,data.name||data.user?.name||form.email.split('@')[0]);}else{setSuccess('Account created! You can now sign in.');setForm(s=>({...s,password:''}));}}catch(err){setError(err.message)}finally{setBusy(false)}}
+ async function googleLogin(){setBusy(true);setError('');setSuccess('');try{const {idToken,name}=await getGoogleIdToken();const data=await read(await fetch(`${API}/api/login/google`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id_token:idToken})}));if(!data.access_token)throw Error('Google login returned no access token.');onLogin(data.access_token,name);}catch(err){setError(err.code==='auth/popup-closed-by-user'?'Google sign-in was cancelled.':err.message)}finally{setBusy(false)}}
+ return <main className="auth-v5"><div className="auth-v5-glow auth-v5-glow-one"/><div className="auth-v5-glow auth-v5-glow-two"/><div className="auth-v5-background" aria-hidden="true"><img src="/omarix-logo.jfif" alt=""/></div><div className="auth-v5-frame"><div className="auth-v5-brand"><img src="/omarix-logo.jfif" alt=""/><span>omarix<small>IMAGE PROCESSING STUDIO</small></span></div><section className="auth-v5-card"><div className="auth-v5-kicker"><Sparkles size={15}/> CREATE WITHOUT LIMITS</div><h1>{login?'Welcome back.':'Your next creation starts here.'}</h1><p className="auth-v5-lead">{login?'Sign in and pick up right where your creativity left off.':'Create your Omarix account and bring your ideas to life.'}</p><div className="auth-v5-switch"><button className={login?'active':''} type="button" onClick={onSwitchToLogin}>Sign in</button><button className={!login?'active':''} type="button" onClick={onSwitchToSignup}>Sign up</button></div><form onSubmit={submit}>{!login&&<label className="auth-v5-label">Full name<input name="name" autoComplete="name" placeholder="Your full name" value={form.name} onChange={update} required/></label>}<label className="auth-v5-label">Email address<input type="email" name="email" autoComplete="email" placeholder="you@example.com" value={form.email} onChange={update} required/></label><label className="auth-v5-label">Password<div className="auth-v5-password"><input type={visible?'text':'password'} name="password" autoComplete={login?'current-password':'new-password'} placeholder="Enter your password" value={form.password} onChange={update} required minLength={login?1:10}/><button type="button" onClick={()=>setVisible(s=>!s)} aria-label={visible?'Hide password':'Show password'}>{visible?<EyeOff size={18}/>:<Eye size={18}/>}</button></div></label>{!login&&<div className="auth-v5-strength"><div className="auth-v5-strength-track" role="progressbar" aria-label="Password strength" aria-valuenow={score} aria-valuemin="0" aria-valuemax="5"><span style={{width:`${score*20}%`,background:score<2?'#ef5f6c':score<4?'#f5a623':'#35b78c'}}/></div><strong>{!form.password?'Password strength':score<2?'Weak':score<4?'Getting stronger':'Strong'}</strong><p>Use 10+ characters, uppercase and lowercase letters, numbers, and a symbol like # or !.</p></div>}<button className="auth-v5-primary" disabled={busy} type="submit">{busy?'Please wait…':login?'Sign in':'Create account'}<ArrowRight size={18}/></button></form><div className="auth-v5-divider"><span>or</span></div><button type="button" className="auth-v5-google" onClick={googleLogin} disabled={busy} title={!firebaseConfigured?'Set up Firebase web config to enable Google login':'Sign in with Google'}><GoogleMark/> Continue with Google <ArrowRight size={16}/></button>{error&&<div className="notice error" role="alert">{error}</div>}{success&&<div className="notice success" role="status">{success} <button type="button" onClick={onSwitchToLogin}>Sign in now</button></div>}<p className="auth-v5-bottom"><ShieldCheck size={15}/> Your creative space, your account.</p></section><p className="auth-v5-footer">© {new Date().getFullYear()} Omarix · Designed for creativity</p></div></main>
 }

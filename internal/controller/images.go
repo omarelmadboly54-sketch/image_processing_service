@@ -6,6 +6,7 @@ import (
 	"image_processing_service/internal/middleware"
 	"image_processing_service/internal/presenters"
 	"image_processing_service/internal/service"
+	"image_processing_service/internal/util"
 	"image_processing_service/token"
 	"net/http"
 	"strconv"
@@ -182,18 +183,40 @@ func(ctl *imageController)TransformAndSaveImage(g *gin.Context){
 	})
 	return
 	}
+
+	if err:=util.ValidateTransformRequest(&req);err!=nil{
+		g.JSON(http.StatusBadRequest,gin.H{
+			"error":err.Error(),
+		})
+		return
+	}
 	
 	transformedImage,err:=ctl.ImageService.TransformAndSaveImage(id,userID,&req)
+
 	if err!=nil{
-		if errors.Is(err,apperrors.ErrImageNotFound){
-			g.JSON(http.StatusNotFound,gin.H{"error":apperrors.ErrImageNotFound.Error(),
-		})
-			return
-		}
-		g.JSON(http.StatusInternalServerError,gin.H{"error":err.Error(),
-	})
-	return
-	}
+	  switch {
+    case errors.Is(err, apperrors.ErrInvalidTransformation):
+        g.JSON(http.StatusBadRequest, gin.H{
+            "error": err.Error(),
+        })
+
+    case errors.Is(err, apperrors.ErrImageNotFound):
+        g.JSON(http.StatusNotFound, gin.H{
+            "error": "image not found",
+        })
+
+    case errors.Is(err, apperrors.ErrImageTransformFail):
+        g.JSON(http.StatusBadGateway, gin.H{
+            "error": "image transformation service failed",
+        })
+
+    default:
+        g.JSON(http.StatusInternalServerError, gin.H{
+            "error": "internal server error",
+        })
+    }
+    return
+}
 
 	g.JSON(http.StatusCreated,gin.H{
 		"message":"Image transformed successfully",

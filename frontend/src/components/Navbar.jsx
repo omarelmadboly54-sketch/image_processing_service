@@ -1,16 +1,5 @@
-import { Home, Images, LogOut, UploadCloud, WandSparkles } from "lucide-react";
-const links = [
-  { id: "home", label: "Home", icon: Home },
-  { id: "upload", label: "Upload image", icon: UploadCloud },
-  { id: "library", label: "My gallery", icon: Images },
-  { id: "workspace", label: "Workspace", icon: WandSparkles },
-];
-export default function Navbar({ onLogout, onNavigate, activePage = "home" }) {
-  return <aside className="omarix-sidebar" aria-label="Main navigation">
-    <button className="sidebar-brand" onClick={() => onNavigate("home")} type="button"><img src="/omarix-logo.jfif" alt="Omarix" /><span>omarix<small>IMAGE PROCESSING</small></span></button>
-    <div className="sidebar-caption">YOUR SPACE</div>
-    <nav className="sidebar-links">{links.map(({ id, label, icon: Icon }) => <button key={id} type="button" className={`sidebar-link ${activePage === id ? "active" : ""}`} aria-current={activePage === id ? "page" : undefined} onClick={() => onNavigate(id)}><Icon size={19}/><span>{label}</span>{id === "workspace" && <small>Soon</small>}</button>)}</nav>
-    <div className="sidebar-bottom"><button type="button" className="sidebar-signout" onClick={onLogout}><LogOut size={18}/> Sign out</button></div>
-  </aside>;
+import { Home, Images, LogOut, UploadCloud, WandSparkles, Moon, Sun } from 'lucide-react';
+const links=[{id:'home',label:'Home',icon:Home},{id:'upload',label:'Upload image',icon:UploadCloud},{id:'library',label:'My gallery',icon:Images},{id:'workspace',label:'Workspace',icon:WandSparkles}];
+export default function Navbar({onLogout,onNavigate,activePage='home',name,theme,onToggleTheme}){
+return <aside className="omarix-sidebar" aria-label="Main navigation"><button className="sidebar-brand" onClick={()=>onNavigate('home')} type="button"><img src="/omarix-logo.jfif" alt="Omarix"/><span>omarix<small>IMAGE PROCESSING</small></span></button><div className="sidebar-greeting"><span className="greeting-wave">👋</span><span className="greeting-copy">Welcome, <strong>{name||'there'}</strong></span></div><div className="sidebar-caption">YOUR SPACE</div><nav className="sidebar-links">{links.map(({id,label,icon:Icon})=><button key={id} type="button" className={`sidebar-link ${activePage===id?'active':''}`} aria-current={activePage===id?'page':undefined} title={label} onClick={()=>onNavigate(id)}><Icon size={19}/><span>{label}</span></button>)}</nav><div className="sidebar-bottom"><button className="sidebar-theme" type="button" title={theme==='dark'?'Light mode':'Dark mode'} onClick={onToggleTheme}>{theme==='dark'?<Sun size={18}/>:<Moon size={18}/>}<span>{theme==='dark'?'Light mode':'Dark mode'}</span></button><button type="button" className="sidebar-signout" title="Sign out" onClick={onLogout}><LogOut size={18}/><span>Sign out</span></button></div></aside>;
 }
-
