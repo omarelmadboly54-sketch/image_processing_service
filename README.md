@@ -186,3 +186,5 @@ Protected image routes validate JWTs and scope image queries to the authenticate
 ## Author
 
 Developed as a personal full-stack project to practice Go backend development, React integration, authentication, image processing, and user-focused debugging.
+
+https://roadmap.sh/projects/image-processing-service
